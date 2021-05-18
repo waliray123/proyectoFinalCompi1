@@ -1,0 +1,95 @@
+package analizadores;
+
+import java_cup.runtime.*;
+import java.util.ArrayList;
+import java.util.List;
+import objetos.ErrorCom;
+import objetos.Etiqueta;
+import objetos.ParametroEtiqueta;
+import objetos.Instrucciones.DeclAsign;
+import objetos.Instrucciones.InsIf;
+import objetos.Instruccion;
+import objetos.Instrucciones.Ciclo;
+import objetos.Instrucciones.InsInsert;
+import objetos.Instrucciones.AlertInfo;
+import objetos.Captcha;
+import objetos.Proceso;
+
+parser code {:
+    
+    private List<Captcha> captchas;         
+    private Captcha captchaAct;
+    private List<ErrorCom> erroresCom;
+    
+
+	public ParserUtil(LexerUtil lex) {
+		super(lex);
+        this.erroresCom = lex.getErroresCom();        
+        this.captchas = new ArrayList<>();        
+	}
+
+    /**
+     * Método al que se llama automáticamente ante algún error sintactico.
+     **/ 
+    public void syntax_error(Symbol s){ 
+        erroresCom.add(new ErrorCom("Sintactico","No se esperaba Componente",String.valueOf(s.left),String.valueOf(s.right),String.valueOf(s.value),""));
+    }
+
+    /**
+     * Método al que se llama automáticamente ante algún error sintáctico 
+     * en el que ya no es posible una recuperación de errores.
+     **/ 
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{ 
+        erroresCom.add(new ErrorCom("Sintactico","Error sintactico Irrecuperable",String.valueOf(s.left),String.valueOf(s.right),String.valueOf(s.value),""));
+    } 
+
+    private void insertarCaptcha(){
+        this.captchaAct = new Captcha();
+        this.captchas.add(this.captchaAct);
+    }
+
+    public List<Captcha> getCaptchas(){
+        return this.captchas;
+    }
+
+    protected int error_sync_size() {
+		return 2;
+	}
+
+    public List<ErrorCom> getErroresCom(){
+        return erroresCom;
+    }
+:}
+
+/* Terminals (tokens returned by the scanner). */
+terminal 	MAY,MEN,BARRA;
+terminal    String VALP;
+terminal    ID_CAP,NOMBRE_CAP,CANT_USOS,CANT_ACIERTOS,CANT_FALLOS,ULTIMA_FECHA;
+terminal    DATOS_FORM;
+
+
+
+
+/* Non-Terminals (created scanner). */
+non terminal  inicio,inicio2;
+//non terminal  division;
+
+
+/* The grammar : */
+
+start with inicio2;
+
+inicio2 ::= 
+            MEN DATOS_FORM MAY {:insertarCaptcha();:} inicio 
+        |
+;
+
+inicio ::= 
+            MEN ID_CAP MAY VALP:val {:captchaAct.setIdCaptcha(String.valueOf(val));:} MEN BARRA ID_CAP MAY inicio
+        |   MEN NOMBRE_CAP MAY VALP:val {:captchaAct.setNombreCaptcha(String.valueOf(val));:} MEN BARRA NOMBRE_CAP MAY inicio
+        |   MEN CANT_USOS MAY VALP:val {:captchaAct.setCantUsos(String.valueOf(val));:} MEN BARRA CANT_USOS MAY inicio
+        |   MEN CANT_ACIERTOS MAY VALP:val {:captchaAct.setCantAciertos(String.valueOf(val));:} MEN BARRA CANT_ACIERTOS MAY inicio
+        |   MEN CANT_FALLOS MAY VALP:val {:captchaAct.setCantFallos(String.valueOf(val));:} MEN BARRA CANT_FALLOS MAY inicio
+        |   MEN ULTIMA_FECHA MAY VALP:val {:captchaAct.setUltFecha(String.valueOf(val));:} MEN ULTIMA_FECHA MAY inicio
+        |   MEN BARRA DATOS_FORM MAY inicio2
+;
