@@ -41,6 +41,7 @@ public class symG {
   public static final int BACK = 27;
   public static final int SELECT = 17;
   public static final int TEXTAREA = 16;
+  public static final int REDIRECT = 96;
   public static final int COMA = 90;
   public static final int HUNTIL = 68;
   public static final int VALP = 45;
@@ -200,7 +201,8 @@ public class symG {
   "DOSPUNT",
   "IDET",
   "DECIM",
-  "CARACTER"
+  "CARACTER",
+  "REDIRECT"
   };
 }
 

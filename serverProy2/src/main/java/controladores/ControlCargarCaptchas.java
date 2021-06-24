@@ -102,6 +102,21 @@ public class ControlCargarCaptchas {
         insertarUtil(utilStr);
     }
     
+    public void insertarAcierto(String id) {
+        List<Captcha> captchas = getUtilizacion();
+        for (Captcha captcha : captchas) {
+            String idC = captcha.getIdCaptcha().replace("\"", "");
+            if (idC.equals(id)) {
+                String aciertos = captcha.getCantAciertos();                                
+                aciertos = sumarUsos(aciertos);
+                captcha.setCantAciertos(aciertos);
+                break;
+            }
+        }
+        String utilStr = generarUtil(captchas);
+        insertarUtil(utilStr);
+    }
+    
     private String generarUtil(List<Captcha> captchas) {        
         GenStrGuardado genStrGuardado = new GenStrGuardado("", "", "");
         genStrGuardado.generarUtil(captchas);
@@ -119,8 +134,7 @@ public class ControlCargarCaptchas {
         form.param("strForm", strF);
         String pruebaRetorno = webTarget.path("cargarUtil").request(MediaType.APPLICATION_JSON)
                 .post(Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE), String.class);
-        return pruebaRetorno;
-        //return webTarget.path("prueba").request(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED).post(Entity.form(form), String.class);
+        return pruebaRetorno;        
     }
 
     private String getFechaHoy() {
@@ -139,7 +153,7 @@ public class ControlCargarCaptchas {
         usoI += 1;
         usos = String.valueOf(usoI);
         return usos;
-    }
+    }        
 
     public List<Captcha> getUtilizacion() {
         String entrada = obtenerUtilizacion("a");

@@ -15,6 +15,7 @@ import objetos.Captcha;
 public class GenStrGuardado {
 
     private String entrada;
+    private String nuevaEntrada;
     private String nombre;
     private String id;
     private String gStr;
@@ -24,6 +25,7 @@ public class GenStrGuardado {
         this.entrada = entrada;
         this.nombre = nombre;
         this.id = id;
+        this.nuevaEntrada = "";
         gStr = "";
         uStr = "";
         generarStr();
@@ -38,8 +40,15 @@ public class GenStrGuardado {
 "	<C_CANTFALLOS>\"0\"</C_CANTFALLOS>\n" +
 "	<C_ULTIMAFECHA>\"2021-01-01\"<C_ULTIMAFECHA>\n";
          */
-        gStr += entrada;
-        gStr += "\n</C_DATOSFORM>\n";
+        String[] entradasSinComent = entrada.split("\\<\\!\\-\\-(\\s*|.*?)*\\-\\-\\>");
+        for (int i = 0; i < entradasSinComent.length; i++) {
+            String strEntrada = entradasSinComent[i];
+            this.nuevaEntrada += strEntrada;
+//            System.out.println(strEntrada);
+        }
+//        gStr += entrada;
+        gStr += nuevaEntrada;
+        gStr += "\n<C_FDATOSFORM>\n";
     }
 
     public void generarUtil(List<Captcha> captchas) {

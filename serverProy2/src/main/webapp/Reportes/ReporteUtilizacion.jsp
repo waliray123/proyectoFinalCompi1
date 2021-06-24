@@ -69,12 +69,13 @@
             <tbody>
                 <!--For para ingresar los datos-->   
                 <%for (Captcha cap : captchas) {
-                    String nombre = cap.getNombreCaptcha();
-                    String cantU = cap.getCantUsos();
-                    String cantA = cap.getCantAciertos();
-                    String cantF = cap.getCantFallos();
-                    String fecha = cap.getUltFecha();
-                
+                    String nombre = cap.getNombreCaptcha().replace("\"", "");
+                    String cantU = cap.getCantUsos().replace("\"", "");
+                    String cantA = cap.getCantAciertos().replace("\"", "");
+                    String cantF = cap.getCantFallos().replace("\"", "");                    
+                    String fecha = cap.getUltFecha().replace("\"", "");
+                    Integer cantidad = Integer.valueOf(cantU)-Integer.valueOf(cantA);
+                    cantF = String.valueOf(cantidad);
                 %>                                        
                 <tr>
                     <th scope="row"><%=nombre%></th>
@@ -83,7 +84,7 @@
                     <td><%=cantF%></td>
                     <td><%=fecha%></td>                    
                 </tr>       
-                <%    }
+                <%    }                
                 %>
             </tbody>
         </table>

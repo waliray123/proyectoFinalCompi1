@@ -22,7 +22,10 @@ import analizadores.LexerUtil;
 import analizadores.ParserGCIC;
 import analizadores.ParserUtil;
 import controladores.ControlSemantico;
+import controladores.ControlTablaSimbolos;
 import generadores.GenStrGuardado;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -31,6 +34,7 @@ import javax.ws.rs.core.MediaType;
 import objetos.Captcha;
 import objetos.Etiqueta;
 import objetos.ParametroEtiqueta;
+import objetos.Simbolo;
 
 /**
  *
@@ -43,47 +47,8 @@ public class SLCompilar extends HttpServlet {
     private WebTarget webTarget;
     private Client client;
     private static final String BASE_URI = "http://localhost:8080/serverProy2/webresources";
-//    private static final String BASE_URI = "http://localhost:8080/serverProy2/webresources/guardado";
+    private String strDbOComp;
 
-
-    /*
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-//        /serverProy2/Reportes/ErroresCom.jsp
-        String entrada = request.getParameter("codeeditor");
-        RequestDispatcher rd;
-        rd = request.getRequestDispatcher("/serverProy2/Reportes/ErroresCom.jsp");
-        rd.forward(request, response);
-        
-//        response.setContentType("text/html;charset=UTF-8");
-//        try (PrintWriter out = response.getWriter()) {
-//            
-//            
-//            /* TODO output your page here. You may use following sample code. 
-//            
-//            out.println("<!DOCTYPE html>");
-//            out.println("<html>");
-//            out.println("<head>");
-//            out.println("<title>Servlet SLCompilar</title>");            
-//            out.println("</head>");
-//            out.println("<body>");              
-//            out.println("<h1>Servlet SLCompilar at " + request.getContextPath() + "</h1>");
-//            out.println(entrada);  
-//            out.println("</body>");
-//            out.println("</html>");
-//            
-//        }
-    }
-     */
     /**
      * Handles the HTTP <code>GET</code> method.
      *
@@ -115,6 +80,12 @@ public class SLCompilar extends HttpServlet {
 //        processRequest(request, response);
         RequestDispatcher rd;
         String entrada = request.getParameter("codeeditor");
+        entrada = entrada.replace("Ã¡", "á");
+        entrada = entrada.replace("Ã©", "é");        
+        entrada = entrada.replace("Ã³", "ó");
+        entrada = entrada.replace("Ãº", "ú");
+        entrada = entrada.replace("Ã­", "í");
+        strDbOComp = request.getParameter("comp");        
         String goTo = compilar(entrada, request);
         rd = request.getRequestDispatcher(goTo);
         rd.forward(request, response);
@@ -132,9 +103,11 @@ public class SLCompilar extends HttpServlet {
 
     private String compilar(String entrada, HttpServletRequest request) {
 //        System.out.println(limpiar("a"));
+//        limpiar("");
         this.erroresCom = new ArrayList<>();
         List<Etiqueta> etiquetas = new ArrayList<>();
-        String strReturn = "";
+        List<Simbolo> simbolos = new ArrayList<>();
+        String strReturn = "";        
         StringReader reader = new StringReader(entrada);
         LexerGCIC lexico = new LexerGCIC(reader);
         ParserGCIC parser = new ParserGCIC(lexico);
@@ -146,7 +119,12 @@ public class SLCompilar extends HttpServlet {
                 //TODO: No hay errores 
                 ControlSemantico control = new ControlSemantico(etiquetas, this.erroresCom);
                 control.validar();
+                ControlTablaSimbolos controlTS = new ControlTablaSimbolos(etiquetas);
+                controlTS.generarTabla();
+                simbolos = controlTS.getSimbolos();
                 this.erroresCom = control.getErrores();
+            } else {
+                simbolos = null;
             }
         } catch (Exception ex) {
             System.out.println("Error irrecuperable");
@@ -154,6 +132,10 @@ public class SLCompilar extends HttpServlet {
             System.out.println("Causa2: " + ex.toString());
             System.out.println(ex);
             ex.printStackTrace();
+        }
+        if (strDbOComp.equals("debug")) {
+            strReturn = "/Reportes/ReporteDebug.jsp";
+            request.setAttribute("simbolos", simbolos);
         }
         if (erroresCom.isEmpty()) {
 //            No hay errores se pueden cargar los datos 
@@ -192,17 +174,25 @@ public class SLCompilar extends HttpServlet {
             cap1.setCantAciertos("0");
             cap1.setCantFallos("0");
             cap1.setUltFecha("01-01-2021");
-            captchas.add(cap1);            
-            
+            captchas.add(cap1);
+
             String prueba = insertarDatos(strGuardado);
-            String utilStr = generarUtil(etiquetas, entrada,captchas);
+            String utilStr = generarUtil(etiquetas, entrada, captchas);
             String prueba2 = insertarUtil(utilStr);
+            if (strDbOComp.equals("debug")) {
+                request.setAttribute("erroresCom", this.erroresCom);
+            }     
             System.out.println(prueba);
             System.out.println(prueba2);
         } else {
             //Hay errores mostrar errores en un JF
             request.setAttribute("erroresCom", this.erroresCom);
-            strReturn = "/Reportes/ErroresCom.jsp";
+            if (strDbOComp.equals("debug")) {
+                strReturn = "/Reportes/ReporteDebug.jsp";
+            } else {
+                strReturn = "/Reportes/ErroresCom.jsp";
+            }
+
         }
         System.out.println(obtenerDB("aaa"));
         System.out.println(obtenerUtil("aaa"));
@@ -225,8 +215,8 @@ public class SLCompilar extends HttpServlet {
         GenStrGuardado genStrGuardado = new GenStrGuardado(entrada, nombre, id);
         return genStrGuardado.getgStr();
     }
-    
-    private String generarUtil(List<Etiqueta> etiquetas, String entrada,List<Captcha> captchas) {
+
+    private String generarUtil(List<Etiqueta> etiquetas, String entrada, List<Captcha> captchas) {
         String id = "";
         String nombre = "";
         List<ParametroEtiqueta> parametros = etiquetas.get(0).getParametrosEt();
@@ -270,7 +260,7 @@ public class SLCompilar extends HttpServlet {
         resource = resource.path("prueba3");
         return resource.request(javax.ws.rs.core.MediaType.TEXT_PLAIN).get(String.class);
     }
-    
+
     private String limpiar(String db) {
         client = javax.ws.rs.client.ClientBuilder.newClient();
         webTarget = client.target(BASE_URI).path("guardado");
@@ -281,13 +271,13 @@ public class SLCompilar extends HttpServlet {
         resource = resource.path("prueba4");
         return resource.request(javax.ws.rs.core.MediaType.TEXT_PLAIN).get(String.class);
     }
-    
+
     private String insertarUtil(String datos) {
         client = javax.ws.rs.client.ClientBuilder.newClient();
         webTarget = client.target(BASE_URI).path("guardado");
         return cargarUtil(datos);
     }
-    
+
     public String cargarUtil(String strF) {
         Form form = new Form();
         form.param("strForm", strF);

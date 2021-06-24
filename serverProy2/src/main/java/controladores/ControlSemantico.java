@@ -8,7 +8,10 @@ package controladores;
 import java.util.List;
 import objetos.ErrorCom;
 import objetos.Etiqueta;
+import objetos.Instruccion;
+import objetos.Instrucciones.DeclAsign;
 import objetos.ParametroEtiqueta;
+import objetos.Proceso;
 
 /**
  *
@@ -27,7 +30,7 @@ public class ControlSemantico {
     public ControlSemantico(List<Etiqueta> etiquetasTotal, List<ErrorCom> errores) {
         this.etiquetasTotal = etiquetasTotal;
         this.errores = errores;
-    }   
+    }
 
     public void validar() {
         validarEtiquetas(this.etiquetasTotal);
@@ -45,7 +48,10 @@ public class ControlSemantico {
     private void validarEtiqueta(Etiqueta etiqueta) {
         String tipo = etiqueta.getTipo();
         if (etiqueta.getParametrosEt().isEmpty() == false) {
-            validarParametros(etiqueta.getParametrosEt(),tipo);
+            validarParametros(etiqueta.getParametrosEt(), tipo);
+        }
+        if (tipo.equals("SCRIPTING")) {
+            validarScript(etiqueta);
         }
     }
 
@@ -100,7 +106,7 @@ public class ControlSemantico {
         if (valor.contains("px")) {
             return true;
         }
-        insertarError("Parametro FontSize no identificado",valor,"ingresar algun tamanio correcto");
+        insertarError("Parametro FontSize no identificado", valor, "ingresar algun tamanio correcto");
         return false;
     }
 
@@ -110,7 +116,7 @@ public class ControlSemantico {
         } else if (valor.contains("%")) {
             return false;
         }
-        insertarError("Parametro pixeles o porcentaje no identificado",valor,"ingresar valor correcto");
+        insertarError("Parametro pixeles o porcentaje no identificado", valor, "ingresar valor correcto");
         return false;
     }
 
@@ -121,7 +127,7 @@ public class ControlSemantico {
             case "column":
                 return true;
             default:
-                insertarError("Parametro Class no identificado",valor,"ingresar alguna clase correcta");
+                insertarError("Parametro Class no identificado", valor, "ingresar alguna clase correcta");
                 return false;
         }
     }
@@ -131,7 +137,7 @@ public class ControlSemantico {
             int val = Integer.parseInt(valor);
             return true;
         } catch (Exception e) {
-            insertarError("Parametro no identificado",valor,"ingresar algun numero correcto");
+            insertarError("Parametro no identificado", valor, "ingresar algun numero correcto");
             return false;
         }
     }
@@ -144,7 +150,7 @@ public class ControlSemantico {
         } else if (valor.contains("-")) {
             return true;
         }
-        insertarError("Parametro ID no identificado",valor,"ingresar algun ID correcto");
+        insertarError("Parametro ID no identificado", valor, "ingresar algun ID correcto");
         return false;
     }
 
@@ -155,7 +161,7 @@ public class ControlSemantico {
                 return true;
             }
         }
-        insertarError("Parametro Type no identificado",valor,"ingresar algun tipo correcto");
+        insertarError("Parametro Type no identificado", valor, "ingresar algun tipo correcto");
         return false;
     }
 
@@ -166,7 +172,7 @@ public class ControlSemantico {
                 return true;
             }
         }
-        insertarError("Parametro TextAlign no identificado",valor,"ingresar alguna alineacino correcta");
+        insertarError("Parametro TextAlign no identificado", valor, "ingresar alguna alineacino correcta");
         return false;
     }
 
@@ -177,7 +183,7 @@ public class ControlSemantico {
                 return true;
             }
         }
-        insertarError("Parametro FontFamily no identificado",valor,"ingresar algun tipo de fuente correcto");
+        insertarError("Parametro FontFamily no identificado", valor, "ingresar algun tipo de fuente correcto");
         return false;
     }
 
@@ -192,12 +198,113 @@ public class ControlSemantico {
                 return true;
             }
         }
-        insertarError("Parametro de color no identificado",valor,"ingresar algun color o hexadecimal correcto");
+        insertarError("Parametro de color no identificado", valor, "ingresar algun color o hexadecimal correcto");
         return false;
     }
-    
-    private void insertarError(String desc,String lex, String posSol){
-        ErrorCom error = new ErrorCom("Semantico",desc,"","",lex,posSol);
+
+    private void validarScript(Etiqueta etiqueta) {
+        List<Proceso> procesos = etiqueta.getProcesos();
+        for (Proceso proceso : procesos) {
+            List<Instruccion> instrucciones = proceso.getInstrucciones();
+            for (Instruccion instruccion : instrucciones) {
+                validarInstruccion(instruccion);
+            }
+        }
+    }
+
+    private void validarInstruccion(Instruccion instruccion) {
+        String tipo = instruccion.getTipo();
+        //TODO: terminar validacion de cada instruccion        
+        switch (tipo) {
+            case "declaracion":
+                validarDeclaracion(instruccion);
+                break;
+            case "asignacion":
+//                insertarAsignacion(instruccion);
+                break;
+//            case "INSIF":
+//                insertarIf(instruccion);
+//                break;
+//            case "INSELSE":
+//                insertarElse(instruccion);
+//                break;
+//            case "INSELSEIF":
+//                insertarElseIf(instruccion);
+//                break;
+//            case "REPEAT":
+//                insertarFor(instruccion);
+//                break;
+//            case "WHILE":
+//                insertarWhile(instruccion);
+//                break;
+//            case "INSERT":
+//                insertarInsert(instruccion);
+//                break;
+//            case "ALERTINFO":
+//                insertarAlert(instruccion);
+//                break;
+//            case "REDIRECT":
+//                insertarRedirect();
+//                break;
+//            case "EXIT":
+//                gStr += "return;\n";
+//                break;
+            default:
+//                throw new AssertionError();
+        }
+    }
+
+    private void validarDeclaracion(Instruccion instruccion) {
+        DeclAsign declaracion = (DeclAsign) instruccion;
+        List<String> valores = declaracion.getValores();
+        String tipo = declaracion.getTipoVar();
+        boolean hayDivision = false;
+        for (String valor : valores) {
+            if (tipo.equals("STRING")||tipo.equals("CHAR")) {
+                if (valor.equals("-") || valor.equals("*") || valor.equals("/")) {
+                    insertarError("Error de signo, No puede ingresar " + valor + " en un "+tipo, valor, "quitar signo");
+                } else if (isNumeric(valor)) {
+                    insertarError("No puede insertar numeros en  un "+ tipo, valor, "quitar numero");
+                }
+                if (tipo.equals("STRING")) {
+                    if (valor.equals("true") || valor.equals("false")) {
+                        insertarError("No puede insertar valores booleanos en un "+ tipo, valor, "quitar booleano");
+                    }
+                }
+            }else if (tipo.equals("BOOLEAN")){
+                if (valor.charAt(0) == '\"'|| valor.charAt(valor.length()-1) == '\"') {
+                    insertarError("No puede insertar string en un " + tipo, valor, "quitar string");
+                }
+            }
+
+            if (hayDivision) {
+                if (valor.equals("(")) {
+
+                } else if (valor.equals("0")) {
+                    //insertarError
+                    insertarError("Division Entre 0", "0", "quitar division entre 0");
+                    hayDivision = false;
+                } else {
+                    hayDivision = false;
+                }
+            }
+            if (valor.equals("/")) {
+                hayDivision = true;
+            }
+        }
+    }
+
+    private boolean isNumeric(String cadena) {
+        try {
+            Integer.parseInt(cadena);
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
+    private void insertarError(String desc, String lex, String posSol) {
+        ErrorCom error = new ErrorCom("Semantico", desc, "", "", lex, posSol);
         this.errores.add(error);
     }
 
@@ -215,6 +322,6 @@ public class ControlSemantico {
 
     public void setErrores(List<ErrorCom> errores) {
         this.errores = errores;
-    }        
+    }
 
 }
