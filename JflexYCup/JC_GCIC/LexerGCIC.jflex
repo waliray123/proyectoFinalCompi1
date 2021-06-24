@@ -65,16 +65,18 @@ scripting = "C_SCRIPTING"
 
 
 //Reglas Lexicas 
-comentario1 = "!!"[a-zA-Z0-9 ]*
-comentario2 = "<!--"[a-zA-Z0-9 \r\t\b\f\n]*"-->"
-palabra = [a-zA-ZÀ-ÿ0-9\u00f1\u00d1]
+comentario1 = \!\!.*
+comentario2 = \<\!\-\-(\s*|.*?)*\-\-\>
+palabra = [a-zA-ZÁ-ÿ0-9\u00f1\u00d1\á\é\í\ó\ú\Á\É\Í\Ó\Ú]
 idEt = [{palabra}_$-]+
-referencia = https?:\/\/[a-zA-Z0-9\-]+(.[a-zA-Z0-9\-]+)+[/#?]?
-decim = [0-9]+.[0-9]+
-valp = "\""([{palabra} #\(\)\n]+|{idEt}|{referencia})+"\""
-caracter = "\'"({palabra}|{idEt}|[ \<\>\-\[\]\=\/])+"\'"
+referencia = https?:\/\/[a-zA-Z0-9\-]+(.[a-zA-Z0-9\-.]+)+[/#?]?
+decim = [0-9]+\.[0-9]+
+//valp = "\""([{palabra} #\(\)\n]+|{idEt}|{referencia})+"\""
+valp = "\""([{palabra} \:\#\(\)\n]+|{idEt}|{referencia})+"\""
+caracter = \'(.)*\'
 proceso = PROCESS_{palabra}+
-palabras = ({palabra})({palabra}|[ ])*
+palabras = ({palabra})({palabra}|decim|[ \r\t\b\f\n]+|\?|\:|\.|\¿)*
+//palabras = ([a-zA-ZÀ-ÿ0-9\u00f1\u00d1]|[ \r\t\b\f\n]|\(|\)|\*|\:|\,|\-|\@|\<|\>|\_)*
 //referencia = https?:\/\/[\w\-]+(\.[\w\-]+)+ 
 
 blancos = [ \r\t\b\f\n]+
@@ -198,6 +200,7 @@ blancos = [ \r\t\b\f\n]+
     {blancos}*"INSERT"{blancos}* {return new Symbol(symG.INSERT,yyline+1,yycolumn+1, yytext());}
     {blancos}*"WHILE"{blancos}* {return new Symbol(symG.WHILE,yyline+1,yycolumn+1, yytext());}   
     {blancos}*"ON_LOAD"{blancos}* {return new Symbol(symG.ONLOAD,yyline+1,yycolumn+1, yytext());}    
+    {blancos}*"REDIRECT"{blancos}* {return new Symbol(symG.REDIRECT,yyline+1,yycolumn+1, yytext());}    
     {blancos}*"true"{blancos}* {return new Symbol(symG.TRUE,yyline+1,yycolumn+1, yytext());}    
     {blancos}*"false"{blancos}* {return new Symbol(symG.FALSE,yyline+1,yycolumn+1, yytext());}    
     {blancos}*"@global"{blancos}* {return new Symbol(symG.GLOBAL,yyline+1,yycolumn+1, yytext());}

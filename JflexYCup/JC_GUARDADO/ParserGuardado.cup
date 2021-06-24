@@ -14,6 +14,7 @@ import objetos.Instrucciones.InsInsert;
 import objetos.Instrucciones.AlertInfo;
 import objetos.Captcha;
 import objetos.Proceso;
+import objetos.Instrucciones.Redireccionar;
 
 parser code {:
     
@@ -107,6 +108,7 @@ parser code {:
 
     private void insertarDeclaracion(String desc){
         this.delcAsignAct = new DeclAsign(desc);
+        /*
         InsIf instruccion1 = null;
         Ciclo instruccion2 = null;
         if(this.insPadre == null){
@@ -138,7 +140,20 @@ parser code {:
                 default:
                     System.out.println("no match");
             }
-        }         
+        }   
+        */
+        if(this.insPadre != null){
+            String tipo = this.insPadre.getTipo();
+            if (tipo.equals("INSIF") || tipo.equals("INSELSE") || tipo.equals("INSELSEIF")) {
+                InsIf temp = (InsIf)this.instruccionAct;
+                temp.insertarInstruccion(this.delcAsignAct);
+            }else if (tipo.equals("REPEAT") || tipo.equals("WHILE")) {
+                Ciclo temp = (Ciclo)this.instruccionAct;
+                temp.insertarInstruccion(this.delcAsignAct);
+            } 
+        }else{
+            this.etiquetaScript.insertarInstruccion(this.delcAsignAct);
+        }       
     }
 
     private void insertarAsign(){
@@ -267,6 +282,38 @@ parser code {:
         }
     }
 
+    private void insertarRedirect(){
+        Redireccionar red = new Redireccionar("REDIRECT");
+        if(this.insPadre != null){
+            String tipo = this.insPadre.getTipo();
+            if (tipo.equals("INSIF") || tipo.equals("INSELSE") || tipo.equals("INSELSEIF")) {
+                InsIf temp = (InsIf)this.instruccionAct;
+                temp.insertarInstruccion(red);
+            }else if (tipo.equals("REPEAT") || tipo.equals("WHILE")) {
+                Ciclo temp = (Ciclo)this.instruccionAct;
+                temp.insertarInstruccion(red);
+            } 
+        }else{
+            this.etiquetaScript.insertarInstruccion(red);
+        }    
+    }
+
+    private void insertarExit(){
+        Instruccion exitIns = new Instruccion("EXIT");
+        if(this.insPadre != null){
+            String tipo = this.insPadre.getTipo();
+            if (tipo.equals("INSIF") || tipo.equals("INSELSE") || tipo.equals("INSELSEIF")) {
+                InsIf temp = (InsIf)this.instruccionAct;
+                temp.insertarInstruccion(exitIns);
+            }else if (tipo.equals("REPEAT") || tipo.equals("WHILE")) {
+                Ciclo temp = (Ciclo)this.instruccionAct;
+                temp.insertarInstruccion(exitIns);
+            } 
+        }else{
+            this.etiquetaScript.insertarInstruccion(exitIns);
+        }  
+    }
+
     private void insertarInsInsert(){
         this.insInsertAct = new InsInsert("INSERT");
         if(this.insPadre != null){
@@ -330,6 +377,7 @@ parser code {:
 terminal 	MAY,MEN,EXCL,BARRA,CORCHCUADI,CORCHCUADD,IGUAL;
 terminal    GCIC,HEAD,TITLE,LINK,BODY,SPAM,INPUT,TEXTAREA;
 terminal    SELECT,OPTION,DIV,IMG,BR,BUTTON,H1,PAR,SCRIPTING;
+terminal    DATOS_FORM,FDATOS_FORM;
 terminal    HREF,BACK,COLOR,FSIZE,FFAMILY,TEXTALIGN,TYPE,IDETIQUETA;
 terminal    NAME,COLS,ROWS,CLASS,SRC,WIDTH,HEIGHT,ALT,ONCLICK;
 terminal    String PALABRA,PALABRAS;
@@ -342,8 +390,8 @@ terminal    MENIG,MAYIG,DOBIGUAL,DIFER,OR,SUMA,RESTA,MULT;
 terminal    PARI,PARD,PUNTCOMA,CORCHI,CORCHD;
 terminal    ONLOAD,PROCESO,GETELEMENT,COMA,AND,DOSPUNT;
 terminal    ID_CAP,NOMBRE_CAP,CANT_USOS,CANT_ACIERTOS,CANT_FALLOS,ULTIMA_FECHA;
-terminal    DATOS_FORM;
 terminal    String IDET,DECIM,CARACTER;
+terminal    REDIRECT;
 
 
 
@@ -354,6 +402,7 @@ non terminal  par0,par1,par2,par3,par4,par5,par6,par7,par8,par9,par10,par11,parG
 non terminal  bod;
 non terminal  instrucciones,inite,ifp,rep,hun,hun2,token,tokenp,condicion,opNot,tipo;
 non terminal  variable,modo,declaracion,asignacion,asg,asg2,fin1,fin2,fin3,parS,opRel,opLog,scrip,div;
+non terminal  declaracion2,asignacion2;
 //non terminal  division;
 
 
@@ -362,7 +411,7 @@ non terminal  variable,modo,declaracion,asignacion,asg,asg2,fin1,fin2,fin3,parS,
 start with inicio2;
 
 inicio2 ::= 
-            MEN DATOS_FORM MAY {:insertarCaptcha();:} inicio MEN BARRA DATOS_FORM MAY inicio2
+            MEN DATOS_FORM MAY {:insertarCaptcha();:} inicio MEN FDATOS_FORM MAY inicio2
         |
 ;
 
@@ -373,13 +422,13 @@ inicio ::=
         |   MEN CANT_ACIERTOS MAY VALP:val {:captchaAct.setCantAciertos(String.valueOf(val));:} MEN BARRA CANT_ACIERTOS MAY inicio
         |   MEN CANT_FALLOS MAY VALP:val {:captchaAct.setCantFallos(String.valueOf(val));:} MEN BARRA CANT_FALLOS MAY inicio
         |   MEN ULTIMA_FECHA MAY VALP:val {:captchaAct.setUltFecha(String.valueOf(val));:} MEN BARRA ULTIMA_FECHA MAY inicio
-        |   MEN GCIC {:insertarEtiqueta("GCIC");:} par0 MAY sig         
+        |   MEN GCIC {:insertarEtiqueta("GCIC");:} par0 MAY sig
+        |   error inicio        
 ;
 
 sig ::= 
             MEN HEAD MAY {:insertarEtiqueta("HEAD");insertarPadre();:} hed 
-        |   MEN BODY {:insertarEtiqueta("BODY");insertarPadre();:} par2 MAY bod {:cerrarPadre();:} sig
-        //|   MEN BODY {:insertarEtiqueta("BODY"); insertarPadre();:} par2 MAY sig {:cerrarPadre();:} MEN BARRA BODY MAY sig
+        |   MEN BODY {:insertarEtiqueta("BODY");insertarPadre();:} par2 MAY bod {:cerrarPadre();:} sig        
         |   MEN SPAM {:insertarEtiqueta("SPAM");:} par3 MAY pals:contenido {:insertarContenido(String.valueOf(contenido));:} MEN BARRA SPAM MAY sig
         |   MEN INPUT {:insertarEtiqueta("INPUT");:} par4 MAY MEN BARRA INPUT MAY sig
         |   MEN TEXTAREA {:insertarEtiqueta("TEXTAREA");:} par5 MAY pals:contenido {:insertarContenido(String.valueOf(contenido));:} MEN BARRA TEXTAREA MAY sig
@@ -392,7 +441,7 @@ sig ::=
         |   MEN PAR {:insertarEtiqueta("PAR");:} par11 MAY pals:contenido {:insertarContenido(String.valueOf(contenido));:} MEN BARRA PAR MAY sig
         |   MEN SCRIPTING {:insertarEtiqueta("SCRIPTING");insertarScript();:} par11 MAY scrip MEN BARRA SCRIPTING MAY bod
         |   MEN BARRA GCIC MAY
-        |   error
+        //|   error
 ;
 
 bod ::=
@@ -400,7 +449,7 @@ bod ::=
         |   MEN INPUT {:insertarEtiqueta("INPUT");:} par4 MAY MEN BARRA INPUT MAY bod
         |   MEN TEXTAREA {:insertarEtiqueta("TEXTAREA");:} par5 MAY pals:contenido {:insertarContenido(String.valueOf(contenido));:} MEN BARRA TEXTAREA MAY bod
         |   MEN SELECT {:insertarEtiqueta("SELECT"); insertarPadre();:} par6 MAY opt {:cerrarPadre();:} bod
-        |   MEN DIV {:insertarEtiqueta("DIV"); insertarPadre();:} par7 MAY sig {:cerrarPadre();:} MEN BARRA DIV MAY bod
+        |   MEN DIV {:insertarEtiqueta("DIV"); insertarPadre();:} par7 MAY div {:cerrarPadre();:} bod
         |   MEN IMG {:insertarEtiqueta("IMG");:} par8 MAY MEN BARRA IMG MAY bod
         |   MEN BR {:insertarEtiqueta("BR");:} MAY bod
         |   MEN BUTTON {:insertarEtiqueta("BUTTON");:} par9 MAY pals:contenido {:insertarContenido(String.valueOf(contenido));:} MEN BARRA BUTTON MAY bod
@@ -416,7 +465,7 @@ div ::=
         |   MEN INPUT {:insertarEtiqueta("INPUT");:} par4 MAY MEN BARRA INPUT MAY div
         |   MEN TEXTAREA {:insertarEtiqueta("TEXTAREA");:} par5 MAY pals:contenido {:insertarContenido(String.valueOf(contenido));:} MEN BARRA TEXTAREA MAY div
         |   MEN SELECT {:insertarEtiqueta("SELECT"); insertarPadre();:} par6 MAY opt {:cerrarPadre();:} div
-        |   MEN DIV {:insertarEtiqueta("DIV"); insertarPadre();:} par7 MAY div {:cerrarPadre();:} MEN BARRA DIV MAY div
+        |   MEN DIV {:insertarEtiqueta("DIV"); insertarPadre();:} par7 MAY div {:cerrarPadre();:} div
         |   MEN IMG {:insertarEtiqueta("IMG");:} par8 MAY MEN BARRA IMG MAY div
         |   MEN BR {:insertarEtiqueta("BR");:} MAY div
         |   MEN BUTTON {:insertarEtiqueta("BUTTON");:} par9 MAY pals:contenido {:insertarContenido(String.valueOf(contenido));:} MEN BARRA BUTTON MAY div
@@ -447,10 +496,13 @@ opt ::=
 ;
 
 pals ::=
-            PALABRA:p {:RESULT = p;:}
-        |   PALABRAS:p {:RESULT = p;:}
+            PALABRA:p pals:p2 {:RESULT = p+p2;:}
+        |   PALABRAS:p pals:p2 {:RESULT = p+p2;:}
+        |   SUMA pals:p2 {:RESULT = "+"+p2;:}
+        |   RESTA pals:p2 {:RESULT = "-"+p2;:}
+        |   MULT pals:p2 {:RESULT = "*"+p2;:}
+        |   BARRA pals:p2 {:RESULT = "/"+p2;:}
         |   {:RESULT = "";:}
-
 ;
 
 parGlob ::=
@@ -545,12 +597,23 @@ instrucciones ::=
             {:insertarDeclaracion("declaracion");:} declaracion instrucciones
         |   {:insertarDeclaracion("asignacion");:} asignacion instrucciones
         |   {:insertarInsIf();:} IF PARI condicion {:insertarCondicion();:} PARD THEN inite ifp {:cerrarPadreIns();:} instrucciones
-        |   {:insertarRepeat();:} REPEAT PARI rep PARD HUNTIL PARI {:crearExpresion();:} hun PARD inite {:cerrarPadreIns();:} instrucciones
+        |   {:insertarRepeat();:} REPEAT PARI rep {:insertarCondicion();:} PARD HUNTIL PARI {:crearExpresion();:} hun PARD inite {:cerrarPadreIns();:} instrucciones
         |   {:insertarWhile();:} WHILE PARI condicion {:insertarCondicion();:} PARD THENWHILE inite {:cerrarPadreIns();:} instrucciones
         |   {:insertarInsInsert();:} INSERT PARI token PARD PUNTCOMA instrucciones
         |   {:insertarAlertInf();:} ALERTINFO PARI parS:val {:alertInfoAct.setMensaje(String.valueOf(val));:} PARD PUNTCOMA instrucciones
-        |   EXIT PARI PARD PUNTCOMA
+        |   {:insertarRedirect();:} REDIRECT PARI PARD PUNTCOMA instrucciones
+        |   {:insertarExit();:} EXIT PARI PARD PUNTCOMA
         |   
+;
+
+inite ::=
+            INITC CORCHI DOSPUNT instrucciones DOSPUNT CORCHD END 
+        |   {:insertarDeclaracion("declaracion");:} declaracion 
+        |   {:insertarDeclaracion("asignacion");:} asignacion 
+        |   {:insertarInsInsert();:} INSERT PARI token PARD PUNTCOMA 
+        |   {:insertarAlertInf();:} ALERTINFO PARI parS:val {:alertInfoAct.setMensaje(String.valueOf(val));:} PARD PUNTCOMA 
+        |   {:insertarRedirect();:} REDIRECT PARI PARD PUNTCOMA 
+        |   {:insertarExit();:} EXIT PARI PARD PUNTCOMA 
 ;
 
 declaracion ::=
@@ -596,11 +659,11 @@ asg ::=
         |   ASC PARI parS:val PARD {:insertarVal("funcAsc:"+String.valueOf(val));:} fin2
         |   DESC PARI parS:val PARD {:insertarVal("funcDesc:"+String.valueOf(val));:} fin2
         |   LETPAR PARI parS:val PARD {:insertarVal("funcLetPar:"+String.valueOf(val));:} fin2
-        |   LETIMPAR PARI parS:val PARD {:insertarVal("funcLetImPar:"+String.valueOf(val));:} fin3
+        |   LETIMPAR PARI parS:val PARD {:insertarVal("funcLetImPar:"+String.valueOf(val));:} fin2
         |   REVERSE PARI parS:val PARD {:insertarVal("funcReverse:"+String.valueOf(val));:} fin2
         |   CARALEATORIO PARI PARD {:insertarVal("funcCarAleatorio");:} fin2
         |   NUMALEA PARI PARD {:insertarVal("funcNumAleatorio");:} fin2
-        |   PARI {:insertarVal("(");:} asg PARD {:insertarVal(")");:} fin2
+        |   PARI {:insertarVal("(");:} asg
 ;
 
 parS ::=
@@ -614,19 +677,21 @@ fin2 ::=
         |   RESTA {:insertarVal("-");:} asg
         |   MULT {:insertarVal("*");:} asg
         |   BARRA {:insertarVal("/");:} asg
+        |   PARD {:insertarVal(")");:} fin2
+        |   opRel:op {:insertarVal(String.valueOf(op));:} asg
         |   PUNTCOMA
 ;
 
 condicion ::=
-            opNot asg2 opRel:val {:insertarEnCondi(String.valueOf(val));:} opNot asg2 opLog
-        |   opNot asg2
+            //opNot asg2 opRel:val {:insertarEnCondi(String.valueOf(val));:} opNot asg2 opLog
+           asg2 opLog
 ;
-
+/*
 opNot ::=
             EXCL {:insertarEnCondi("!");:}
         |   
 ;
-
+*/
 asg2 ::=
             VALP:val {:insertarEnCondi(val);:} fin3
         |   TRUE {:insertarEnCondi("true");:} fin3
@@ -643,6 +708,7 @@ asg2 ::=
         |   CARALEATORIO PARI PARD {:insertarEnCondi("funcCarAleatorio");:} fin3
         |   NUMALEA PARI PARD {:insertarEnCondi("funcNumAleatorio");:} fin3
         |   PARI {:insertarEnCondi("(");:} asg2 PARD {:insertarEnCondi(")");:} fin3
+        |   EXCL {:insertarEnCondi("!");:} asg2
 ;
 
 fin3 ::=
@@ -650,6 +716,7 @@ fin3 ::=
         |   RESTA {:insertarEnCondi("-");:} asg2
         |   MULT {:insertarEnCondi("*");:} asg2
         |   BARRA {:insertarEnCondi("/");:} asg2
+        |   opRel:op {:insertarEnCondi(String.valueOf(op));:} asg2
         |
 ;
 
@@ -668,19 +735,15 @@ opLog ::=
         |
 ;
 
-inite ::=
-            INITC CORCHI DOSPUNT instrucciones DOSPUNT CORCHD END
-;
-
 ifp ::=
             ELSE {:insertarElse();:} inite
-        |   ELSEIF {:insertarElseIF();:} PARI condicion PARD inite ifp
+        |   ELSEIF {:insertarElseIF();:} PARI condicion {:insertarCondicion();:} PARD THEN inite ifp
         |
 ;
 
 rep ::=
-            {:insertarDeclaracionCiclo("declaracion");:} declaracion 
-        |   {:insertarDeclaracionCiclo("asignacion");:} asignacion
+            {:insertarDeclaracionCiclo("declaracion");:} declaracion2
+        |   {:insertarDeclaracionCiclo("asignacion");:} asignacion2
 ;
 
 hun ::=
@@ -705,4 +768,12 @@ token ::=
 tokenp ::=
             COMA token
         |   
+;
+
+declaracion2 ::=
+            tipo:t modo:m variable:v {:insertarEnDeclaracion(String.valueOf(t),String.valueOf(m),String.valueOf(v));:} IGUAL asg2
+;
+
+asignacion2 ::=
+            variable:v {:delcAsignAct.insertarVariable(String.valueOf(v));:} IGUAL asg2
 ;

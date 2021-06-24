@@ -1,0 +1,316 @@
+package analizadores;
+
+import java_cup.runtime.*;
+import java.util.ArrayList;
+import java.util.List;
+import objetos.ErrorCom;
+import objetos.Etiqueta;
+import objetos.ParametroEtiqueta;
+import objetos.Instrucciones.DeclAsign;
+import objetos.Instrucciones.InsIf;
+import objetos.Instruccion;
+import objetos.Instrucciones.Ciclo;
+import objetos.Instrucciones.InsInsert;
+import objetos.Instrucciones.AlertInfo;
+import objetos.Captcha;
+import objetos.Proceso;
+import objetos.Instrucciones.Redireccionar;
+
+parser code {:
+    
+    private List<ErrorCom> erroresCom;
+    private List<Captcha> captchas;
+    private List<Etiqueta> etiquetas;
+    private List<ParametroEtiqueta> parametrosEtActl;
+    //private List<Etiqueta> etiquetasBody;
+    //private List<ParametroEtiqueta> parametrosBody;
+    //private Etiqueta bodyAct;
+    private Etiqueta etiquetaAct;
+    private Etiqueta etiquetaPadre;
+    private Etiqueta etiquetaScript;
+    private DeclAsign delcAsignAct;
+    private Instruccion instruccionAct;
+    private Instruccion insIf;
+    private Instruccion insPadre;
+    private List<String> valoresCondicion;
+    private AlertInfo alertInfoAct;
+    private InsInsert insInsertAct;  
+    private List<String> expresionNum;  
+    private Captcha captchaAct;
+    
+
+	public ParserInsert(LexerInsert lex) {
+		super(lex);
+        this.erroresCom = lex.getErroresCom();
+        this.etiquetas = new ArrayList<>();        
+        this.etiquetaAct = new Etiqueta();
+        this.etiquetaPadre = null;
+        this.insPadre = null;
+        this.valoresCondicion = new ArrayList<>();
+        this.captchas = new ArrayList<>();
+	}
+
+    /**
+     * Método al que se llama automáticamente ante algún error sintactico.
+     **/ 
+    public void syntax_error(Symbol s){ 
+        erroresCom.add(new ErrorCom("Sintactico","No se esperaba Componente",String.valueOf(s.left),String.valueOf(s.right),String.valueOf(s.value),""));
+    }
+
+    /**
+     * Método al que se llama automáticamente ante algún error sintáctico 
+     * en el que ya no es posible una recuperación de errores.
+     **/ 
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{ 
+        erroresCom.add(new ErrorCom("Sintactico","Error sintactico Irrecuperable",String.valueOf(s.left),String.valueOf(s.right),String.valueOf(s.value),""));
+    } 
+
+    private void insertarCaptcha(){
+        this.captchaAct = new Captcha();
+        this.etiquetas = new ArrayList<>();
+        this.captchaAct.setEtiquetas(this.etiquetas);
+        this.captchas.add(this.captchaAct);
+    }
+
+    private void insertarEtiqueta(String tipo){
+        this.etiquetaAct = new Etiqueta();
+        this.etiquetaAct.setTipo(tipo);        
+        if(this.etiquetaPadre == null){
+            this.etiquetas.add(this.etiquetaAct);
+        }else{
+            //List<Etiqueta> etiquetasTemp = this.etiquetaPadre.getEtiquetas();
+            this.etiquetaAct.setEtiquetaPadre(this.etiquetaPadre);
+            etiquetaPadre.insertarEtiqueta(this.etiquetaAct);            
+        }   
+    }
+
+    private void insertarPalsVar(String tipo, String contenido){
+        this.etiquetaAct = new Etiqueta();
+        this.etiquetaAct.setTipo(tipo);        
+        this.etiquetaAct.setContenido(contenido);
+        if(this.etiquetaPadre == null){
+            this.etiquetas.add(this.etiquetaAct);
+        }else{
+            //List<Etiqueta> etiquetasTemp = this.etiquetaPadre.getEtiquetas();
+            this.etiquetaAct.setEtiquetaPadre(this.etiquetaPadre);
+            etiquetaPadre.insertarEtiqueta(this.etiquetaAct);            
+        }
+    }
+
+    private void insertarScript(){
+        this.etiquetaScript = this.etiquetaAct;           
+    }    
+
+    private void insertarPadre(){
+        this.etiquetaPadre = this.etiquetaAct;
+    }
+
+    private void cerrarPadre(){
+        Etiqueta etiquetaTemp = this.etiquetaPadre.getEtiquetaPadre();
+        this.etiquetaPadre = etiquetaTemp;
+    }
+
+    private void insertarParametro(String tipo,String val){
+        ParametroEtiqueta parIns = new ParametroEtiqueta(tipo,val);
+        this.etiquetaAct.insertarParametro(parIns);
+    }   
+
+
+    public List<Etiqueta> getEtiquetasTotal(){
+        return this.etiquetas;        
+    } 
+
+    protected int error_sync_size() {
+		return 2;
+	}
+
+    public List<ErrorCom> getErroresCom(){
+        return erroresCom;
+    }
+:}
+
+/* Terminals (tokens returned by the scanner). */
+terminal 	MAY,MEN,EXCL,BARRA,CORCHCUADI,CORCHCUADD,IGUAL;
+terminal    GCIC,HEAD,TITLE,LINK,BODY,SPAM,INPUT,TEXTAREA;
+terminal    SELECT,OPTION,DIV,IMG,BR,BUTTON,H1,PAR,SCRIPTING;
+terminal    HREF,BACK,COLOR,FSIZE,FFAMILY,TEXTALIGN,TYPE,IDETIQUETA;
+terminal    NAME,COLS,ROWS,CLASS,SRC,WIDTH,HEIGHT,ALT,ONCLICK;
+terminal    SUMA,RESTA,MULT;
+terminal    String PALABRA,PALABRAS;
+terminal    String VALP,IDET,DECIM;
+terminal    VARIABLESCRIP,FINVARIABLESCRIP;
+terminal    MENIG,MAYIG,DOBIGUAL,DIFER,OR,AND,PARI,PARD,PUNTCOMA,CORCHI,CORCHD,COMA,DOSPUNT;
+
+
+
+
+/* Non-Terminals (created scanner). */
+non terminal  inicio,sig,pals,valp,opt,pals2;
+non terminal  par0,par3,par4,par5,par6,par8,par9,par10,par11,parGlob;
+//non terminal  division;
+
+
+/* The grammar : */
+
+start with inicio;
+
+inicio ::= 
+        |   MEN GCIC {:insertarEtiqueta("GCIC");:} MAY sig         
+;
+
+sig ::= 
+            pals:contenido {:insertarPalsVar("CONTENIDO",String.valueOf(contenido));:} sig
+        |   MEN SPAM {:insertarEtiqueta("SPAM");:} par3 MAY sig  
+        |   MEN INPUT {:insertarEtiqueta("INPUT");:} par4 MAY sig
+        |   MEN TEXTAREA {:insertarEtiqueta("TEXTAREA");:} par5 MAY sig
+        //|   MEN SELECT {:insertarEtiqueta("SELECT"); insertarPadre();:} par6 MAY opt {:cerrarPadre();:} sig        
+        |   MEN IMG {:insertarEtiqueta("IMG");:} par8 MAY sig
+        |   MEN BR {:insertarEtiqueta("BR");:} MAY sig
+        |   MEN BUTTON {:insertarEtiqueta("BUTTON");:} par9 MAY sig
+        |   MEN H1 {:insertarEtiqueta("H1");:} par10 MAY sig
+        |   MEN PAR {:insertarEtiqueta("PAR");:} par11 MAY sig 
+        |   MEN IDET MAY pals2:contenido {:insertarPalsVar("VARIABLE",String.valueOf(contenido));:} sig
+        |   MEN BARRA PAR MAY sig
+        |   MEN BARRA H1 MAY sig
+        |   MEN BARRA BUTTON MAY sig
+        |   MEN BARRA IMG MAY sig
+        |   MEN BARRA SPAM MAY sig
+        |   MEN BARRA INPUT MAY sig
+        |   MEN BARRA TEXTAREA MAY sig
+        |   MEN BARRA GCIC MAY        
+;
+/*
+opt ::=
+            MEN OPTION {:insertarEtiqueta("OPTION");:} MAY pals:contenido {:insertarContenido(String.valueOf(contenido));:} MEN BARRA OPTION MAY opt
+        |   MEN BARRA SELECT MAY
+        |   error
+;
+*/
+//terminal    MENIG,MAYIG,DOBIGUAL,DIFER,OR,AND,PARI,PARD,PUNTCOMA,CORCHI,CORCHD,COMA,DOSPUNT;
+pals ::=
+            PALABRA:p {:RESULT = p;:}
+        |   PALABRAS:p {:RESULT = p;:}
+        |   SUMA {:RESULT = "+";:}
+        |   RESTA {:RESULT = "-";:}
+        |   MULT {:RESULT = "*";:}
+        |   BARRA {:RESULT = "/";:}
+        |   VALP:p {:RESULT = p;:}        
+        |   IGUAL {:RESULT = "=";:}
+        |   MENIG {:RESULT = "<=";:}
+        |   MAYIG {:RESULT = ">=";:}
+        |   DOBIGUAL {:RESULT = "==";:}
+        |   DIFER {:RESULT = "!=";:}
+        |   OR {:RESULT = "||";:}
+        |   AND {:RESULT = "&&";:}
+        |   PARI {:RESULT = "(";:}
+        |   PARD {:RESULT = ")";:}
+        |   PUNTCOMA {:RESULT = ";";:}
+        |   CORCHI {:RESULT = "{";:}
+        |   CORCHD {:RESULT = "}";:}
+        |   COMA {:RESULT = ",";:}
+        |   DOSPUNT {:RESULT = ":";:}
+        |   IDET:p {:RESULT = p;:}
+        |   DECIM:p {:RESULT = p;:}
+;
+
+pals2 ::=
+            PALABRA:p pals2:p2 {:RESULT = p+p2;:}
+        |   PALABRAS:p pals2:p2 {:RESULT = p+p2;:}
+        |   SUMA pals2:p2 {:RESULT = "+"+p2;:}
+        |   RESTA pals2:p2 {:RESULT = "-"+p2;:}
+        |   MULT pals2:p2 {:RESULT = "*"+p2;:}
+        |   BARRA pals2:p2 {:RESULT = "/"+p2;:}
+        |   VALP:p pals2:p2 {:RESULT = p+p2;:}        
+        |   IGUAL pals2:p2 {:RESULT = "="+p2;:}
+        |   MENIG pals2:p2 {:RESULT = "<="+p2;:}
+        |   MAYIG pals2:p2 {:RESULT = ">="+p2;:}
+        |   DOBIGUAL pals2:p2 {:RESULT = "=="+p2;:}
+        |   DIFER pals2:p2 {:RESULT = "!="+p2;:}
+        |   OR pals2:p2 {:RESULT = "||"+p2;:}
+        |   AND pals2:p2 {:RESULT = "&&"+p2;:}
+        |   PARI pals2:p2 {:RESULT = "("+p2;:}
+        |   PARD pals2:p2 {:RESULT = ")"+p2;:}
+        |   PUNTCOMA pals2:p2 {:RESULT = ";"+p2;:}
+        |   CORCHI pals2:p2 {:RESULT = "{"+p2;:}
+        |   CORCHD pals2:p2 {:RESULT = "}"+p2;:}
+        |   COMA pals2:p2 {:RESULT = ","+p2;:}
+        |   DOSPUNT pals2:p2 {:RESULT = ":"+p2;:}
+        |   IDET:p pals2:p2 {:RESULT = p+p2;:}
+        |   DECIM:p pals:p2 {:RESULT = p+p2;:}
+        |   MEN IDET MAY {:RESULT = "";:}
+;
+
+parGlob ::=
+            CORCHCUADI FSIZE valp:val {:insertarParametro("FSIZE",String.valueOf(val));:} CORCHCUADD
+        |   CORCHCUADI FFAMILY valp:val {:insertarParametro("FFAMILY",String.valueOf(val));:} CORCHCUADD
+        |   CORCHCUADI TEXTALIGN valp:val {:insertarParametro("TEXTALIGN",String.valueOf(val));:} CORCHCUADD
+        |   CORCHCUADI IDETIQUETA valp:val {:insertarParametro("IDETIQUETA",String.valueOf(val));:} CORCHCUADD
+;
+
+/*
+par0 ::=
+            CORCHCUADI IDETIQUETA valp:val {:insertarParametro("IDETIQUETA",String.valueOf(val));:} CORCHCUADD par0
+        |   CORCHCUADI NAME valp:val {:insertarParametro("NAME",String.valueOf(val));:} CORCHCUADD par0
+        |
+;
+*/
+
+par3 ::=
+            CORCHCUADI COLOR valp:val {:insertarParametro("COLOR",String.valueOf(val));:} CORCHCUADD par3
+        |   parGlob par3
+        |
+;
+
+par4 ::=
+            CORCHCUADI TYPE valp:val {:insertarParametro("TYPE",String.valueOf(val));:} CORCHCUADD par4
+        |   parGlob par4
+        |
+;
+
+par5 ::=
+            CORCHCUADI COLS valp:val {:insertarParametro("COLS",String.valueOf(val));:} CORCHCUADD par5
+        |   CORCHCUADI ROWS valp:val {:insertarParametro("ROWS",String.valueOf(val));:} CORCHCUADD par5
+        |   parGlob par5
+        |
+;
+
+/*
+par6 ::=
+            CORCHCUADI COLOR valp:val {:insertarParametro("COLOR",String.valueOf(val));:} CORCHCUADD par6
+        |   parGlob par6
+        |
+;
+*/
+
+par8 ::=
+            CORCHCUADI SRC valp:val {:insertarParametro("SRC",String.valueOf(val));:} CORCHCUADD par8
+        |   CORCHCUADI WIDTH valp:val {:insertarParametro("WIDTH",String.valueOf(val));:} CORCHCUADD par8 
+        |   CORCHCUADI HEIGHT valp:val {:insertarParametro("HEIGHT",String.valueOf(val));:} CORCHCUADD par8 
+        |   CORCHCUADI ALT valp:val {:insertarParametro("ALT",String.valueOf(val));:} CORCHCUADD par8 
+        |   CORCHCUADI IDETIQUETA valp:val {:insertarParametro("IDETIQUETA",String.valueOf(val));:} CORCHCUADD par8 
+        |
+;
+
+par9 ::=
+            CORCHCUADI ONCLICK valp:val {:insertarParametro("ONCLICK",String.valueOf(val));:} CORCHCUADD par9
+        |   CORCHCUADI COLOR valp:val {:insertarParametro("COLOR",String.valueOf(val));:} CORCHCUADD par9
+        |   CORCHCUADI BACK valp:val {:insertarParametro("BACK",String.valueOf(val));:} CORCHCUADD par9
+        |   parGlob par9
+        |
+;
+
+par10 ::=
+            CORCHCUADI COLOR valp:val {:insertarParametro("COLOR",String.valueOf(val));:} CORCHCUADD par10
+        |   parGlob par10
+        |
+;
+
+par11 ::=
+            CORCHCUADI COLOR valp:val {:insertarParametro("COLOR",String.valueOf(val));:} CORCHCUADD par11
+        |   parGlob par11
+        |
+;
+
+valp ::=
+            IGUAL VALP:contenido {:RESULT = contenido;:}
+;

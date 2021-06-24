@@ -61,6 +61,7 @@ h1 = "C_H1"
 par = "C_P"
 scripting = "C_SCRIPTING"
 datosForm = "C_DATOSFORM"
+fdatosForm = "C_FDATOSFORM"
 idCap = "C_IDCAP"
 nombCap = "C_NOMBRECAP"
 
@@ -68,16 +69,17 @@ nombCap = "C_NOMBRECAP"
 
 
 //Reglas Lexicas 
-comentario1 = "!!"[a-zA-Z0-9 ]*
-comentario2 = "<!--"[a-zA-Z0-9 \r\t\b\f\n]*"-->"
+comentario1 = \!\!.*
+comentario2 = \<\!\-\-(\s*|.*?)*\-\-\>
 palabra = [a-zA-ZÀ-ÿ0-9\u00f1\u00d1]
 idEt = [{palabra}_$-]+
-referencia = https?:\/\/[a-zA-Z0-9\-]+(.[a-zA-Z0-9\-]+)+[/#?]?
-decim = [0-9]+.[0-9]+
-valp = "\""([{palabra} #\(\)\n]+|{idEt}|{referencia})+"\""
-caracter = "\'"({palabra}|{idEt}|[ \<\>\-\[\]\=\/])+"\'"
+referencia = https?:\/\/[a-zA-Z0-9\-]+(.[a-zA-Z0-9\-.]+)+[/#?]?
+decim = [0-9]+\.[0-9]+
+valp = "\""([{palabra} \:\#\(\)\n]+|{idEt}|{referencia})+"\""
+//valp = \"(.)*\"
+caracter = \'(.)*\'
 proceso = PROCESS_{palabra}+
-palabras = ({palabra})({palabra}|[ ])*
+palabras = ({palabra})({palabra}|decim|[ \r\t\b\f\n]+|\?|\:|\.|\¿)*
 //referencia = https?:\/\/[\w\-]+(\.[\w\-]+)+ 
 
 blancos = [ \r\t\b\f\n]+
@@ -156,7 +158,7 @@ blancos = [ \r\t\b\f\n]+
     {height} {return new Symbol(symT.HEIGHT,yyline+1,yycolumn+1, yytext());}
     {alt} {return new Symbol(symT.ALT,yyline+1,yycolumn+1, yytext());}
     {onclick} {return new Symbol(symT.ONCLICK,yyline+1,yycolumn+1, yytext());}
-    {gcic} {return new Symbol(symT.GCIC,yyline+1,yycolumn+1, yytext());}
+    {gcic} {errorPrueba(yytext(),"Es GCIC");return new Symbol(symT.GCIC,yyline+1,yycolumn+1, yytext());}
     {head} {return new Symbol(symT.HEAD,yyline+1,yycolumn+1, yytext());}
     {title} {return new Symbol(symT.TITLE,yyline+1,yycolumn+1, yytext());}
     {link} {return new Symbol(symT.LINK,yyline+1,yycolumn+1, yytext());}
@@ -174,6 +176,7 @@ blancos = [ \r\t\b\f\n]+
     {par} {return new Symbol(symT.PAR,yyline+1,yycolumn+1, yytext());}
     {scripting} {return new Symbol(symT.SCRIPTING,yyline+1,yycolumn+1, yytext());}
     {datosForm} {errorPrueba(yytext(),"Es datosForm");return new Symbol(symT.DATOS_FORM,yyline+1,yycolumn+1, yytext());}
+    {fdatosForm} {errorPrueba(yytext(),"Es fdatosForm");return new Symbol(symT.FDATOS_FORM,yyline+1,yycolumn+1, yytext());}
     {idCap} {return new Symbol(symT.ID_CAP,yyline+1,yycolumn+1, yytext());}
     {nombCap} {return new Symbol(symT.NOMBRE_CAP,yyline+1,yycolumn+1, yytext());}
 
@@ -204,6 +207,7 @@ blancos = [ \r\t\b\f\n]+
     {blancos}*"INSERT"{blancos}* {return new Symbol(symT.INSERT,yyline+1,yycolumn+1, yytext());}
     {blancos}*"WHILE"{blancos}* {return new Symbol(symT.WHILE,yyline+1,yycolumn+1, yytext());}   
     {blancos}*"ON_LOAD"{blancos}* {return new Symbol(symT.ONLOAD,yyline+1,yycolumn+1, yytext());}    
+    {blancos}*"REDIRECT"{blancos}* {return new Symbol(symT.REDIRECT,yyline+1,yycolumn+1, yytext());}   
     {blancos}*"true"{blancos}* {return new Symbol(symT.TRUE,yyline+1,yycolumn+1, yytext());}    
     {blancos}*"false"{blancos}* {return new Symbol(symT.FALSE,yyline+1,yycolumn+1, yytext());}    
     {blancos}*"@global"{blancos}* {return new Symbol(symT.GLOBAL,yyline+1,yycolumn+1, yytext());}
