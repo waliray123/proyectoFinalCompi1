@@ -39,19 +39,8 @@ public class SLCaptcha extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
+        try (PrintWriter out = response.getWriter()) {            
             out.print(strHtml);
-//            out.println("<!DOCTYPE html>");
-//            out.println("<html>");
-//            out.println("<head>");
-//            out.println("<title>Servlet SLCaptcha</title>");            
-//            out.println("</head>");
-//            out.println("<body>");
-//            out.println("<h1>Servlet SLCaptcha at " + request.getContextPath() + "</h1>");
-//            out.println("<h1>El captcha es: " + captcha.getIdCaptcha()+"Con nombre: "+captcha.getNombreCaptcha() + "</h1>");            
-//            out.println("</body>");
-//            out.println("</html>");
         }
     }
 

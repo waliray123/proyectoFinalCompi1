@@ -92,23 +92,25 @@
                 <%    }
                 %>
             </tbody>
-        </table>
+        </table>        
+        <%    } else {%>
+        <br>
+        <br>
+        <br>
+        <h3 class="muted">Tabla de Simbolos No generada debido a los siguientes errores</h3>        
+        <%}
+        %>
         <div class="container">
             <div class="head">
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="span6">
-                            <h1 class="muted">Errores de Compilacion</h1>
+                            <h1 class="muted">Errores de Compilacion</h1>                            
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <%    } else {%>
-        <h3 class="muted">Tabla de Simbolos No generada debido a los siguientes errores</h3>
-        <%}
-        %>
-
         <!--Inicio de tabla-->
         <table class="table table-bordered table-hover">
             <thead>
